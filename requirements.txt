@@ -1,0 +1,8 @@
+streamlit>=1.30
+pytest>=7.0
+google-generativeai
+scikit-learn
+python-dotenv
+numpy
+openai
+langchain

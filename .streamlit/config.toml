@@ -1,0 +1,16 @@
+[client]
+showErrorDetails = true
+toolbarMode = "viewer"
+
+[logger]
+level = "info"
+
+[theme]
+primaryColor = "#d4a574"
+backgroundColor = "#f5f1ed"
+secondaryBackgroundColor = "#ede9e4"
+textColor = "#5a4a3a"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
