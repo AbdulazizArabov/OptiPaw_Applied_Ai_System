@@ -137,4 +137,4 @@ graph LR
 
 ## Loom Video
 
-📽️ _Add your Loom video link here_
+📽️ [Loom video link here](https://www.loom.com/share/eb18da64ef76411b818f35977409e64d)
