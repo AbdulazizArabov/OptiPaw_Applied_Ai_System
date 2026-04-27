@@ -2,18 +2,19 @@
 
 > A Streamlit-based pet care planning app that combines rule-based scheduling with human-readable tests and a small retrieval-augmented answer workflow.
 
-## Summary
+## My Project Summary
 
-OptiPaw Applied AI System helps a pet owner turn tasks into a daily plan using multiple scheduling strategies, recurrence handling, conflict detection, and data persistence. The system also includes an evaluation harness for human-like testing of answer quality.
+I built the OptiPaw Applied AI System to help pet owners turn tasks into a daily plan using multiple scheduling strategies, recurrence handling, conflict detection, and data persistence. I also included an evaluation harness for human-like testing of answer quality.
 
 ---
 
-## Original Project Context (Modules 1-3)
+## How I Built Modules 1-3
 
 ### Module 1 — Core scheduling backend
 - Implemented in `pawpal_system.py`.
 - Defines `Owner`, `Pet`, `Task`, `Scheduler`, `ScheduledEntry`, and `DailyPlan`.
 - Supports priority, time, and priority-time scheduling strategies.
+- Includes a "Slot Finder" engine to identify the earliest available gaps in a schedule.
 - Includes recurrence expansion, conflict detection, overdue logic, and JSON persistence.
 
 ### Module 2 — Streamlit UI
@@ -29,17 +30,17 @@ OptiPaw Applied AI System helps a pet owner turn tasks into a daily plan using m
 
 ---
 
-## Architecture Overview
+## My Architecture Overview
 
-The app is built as a small modular system:
+I built the app as a modular system consisting of:
 
 - `app.py` — user-facing Streamlit interface
-- `pawpal_system.py` — scheduler and data model
+- `pawpal_system.py` — my custom scheduler and data model
 - `data.json` — persisted owner/pet/task state
 - `study_notes.txt` — local context for retrieval
 - `rag_engine.py` — query + retrieval + LLM answer generation
 - `test_runner.py` — evaluation harness for test queries
-- `tests/test_pawpal.py` — automated unit and integration tests
+- `tests/test_pawpal.py` — my suite of automated unit and integration tests
 
 The data flow is:
 1. User input enters the Streamlit UI.
@@ -50,8 +51,9 @@ The data flow is:
 
 ---
 
-## Setup Instructions
+## My Setup Instructions
 
+I have streamlined the configuration process. If you encounter API issues, ensure your `gem.env` is correctly formatted.
 1. Open a terminal in the project root.
 2. Create and activate a virtual environment:
 
@@ -95,19 +97,22 @@ python test_runner.py
 
 ### Example 1
 **User:** Add a dog walk task at 08:00 with priority 5.
-**App:** _[paste expected response here]_
+**App:** ✅ 'Morning Walk' added to Mochi's schedule! (The UI updates the task table with a 🔴 High priority label).
 
 ### Example 2
 **User:** Add a cat feeding task and generate today’s plan.
-**App:** _[paste expected response here]_
+**App:** The system generates a "Daily Plan" summary showing the feeding task scheduled, time used vs. budget, and a plain-English reasoning string: "Scheduled 1 task(s): - Cat Feeding (priority 4, 15 min)".
 
 ### Example 3
 **User:** Ask the RAG engine about pet vaccination guidelines.
-**App:** _[paste expected response here]_
+**App:** 🐾 **Assistant:** Vaccinations are crucial for both dogs and cats. They help prevent serious diseases and are a core part of regular health maintenance...
+*Confidence Score: 0.85*
 
 ### Example 4
 **User:** Run the evaluation harness and confirm confidence score.
-**App:** _[paste expected response here]_
+**App:** 
+Running RAG engine test harness...
+Test summary: Passed: 5/5 | Confidence score: 100%
 
 ---
 

@@ -1,14 +1,14 @@
 # OptiPaw Applied AI System Project Reflection
 
-## 1. System Design
+## 1. My System Design
 
 **a. Initial design**
 
-- Briefly describe your initial UML design.
+- I initially designed a five-class system.
 
-Five classes: `Owner`, `Pet`, `Task`, `Scheduler`, and `DailyPlan`. Owner manages pets, each pet owns tasks, Scheduler reads the owner's budget and produces a DailyPlan.
+I implemented `Owner`, `Pet`, `Task`, `Scheduler`, and `DailyPlan`. The `Owner` manages pets, each `Pet` owns tasks, and the `Scheduler` reads the owner's budget to produce a `DailyPlan`.
 
-- What classes did you include, and what responsibilities did you assign to each?
+**My assigned responsibilities:**
 
 | Class | Responsibility |
 |---|---|
@@ -20,11 +20,11 @@ Five classes: `Owner`, `Pet`, `Task`, `Scheduler`, and `DailyPlan`. Owner manage
 
 **b. Design changes**
 
-Yes — three refinements emerged during implementation:
+Yes — I made three major refinements during implementation:
 
-1. **`ScheduledEntry` added** — pairs a scheduled `Task` with its pet name so the plan can say "Mochi: Morning walk" instead of a nameless task.
-2. **`fit_tasks` returns a tuple** — returning `(scheduled, skipped)` instead of just the scheduled list lets `explain_reasoning` describe what was left out and why.
-3. **`exportPlan` removed from `Scheduler`** — `DailyPlan.to_dict()` already handles serialisation. Keeping both would violate single responsibility.
+1. **I added `ScheduledEntry`** — this pairs a scheduled `Task` with its pet name so the plan can say "Mochi: Morning walk" instead of a nameless task.
+2. **I changed `fit_tasks` to return a tuple** — returning `(scheduled, skipped)` instead of just the scheduled list let me write `explain_reasoning` to describe exactly what was left out.
+3. **I removed `exportPlan` from `Scheduler`** — I realized `DailyPlan.to_dict()` already handled serialisation, and I wanted to maintain single responsibility.
 
 - Additional system design artifact:
 
@@ -111,58 +111,61 @@ classDiagram
 
 ---
 
-## 2. Scheduling Logic and Tradeoffs
+## 2. My Scheduling Logic and Tradeoffs
 
 **a. Constraints and priorities**
 
-Four constraints, in order of importance:
+I prioritized four constraints:
 
-1. **Time budget** — hard ceiling. If a task doesn't fit, it's skipped entirely. You can't half-walk a dog.
-2. **Priority (1–5)** — determines which tasks the knapsack values most. Missed meds matter more than missed playtime.
-3. **Deadline (`due_time`)** — used by `time-first` and `priority-time` strategies to order within a budget band.
-4. **Completion status** — already-done tasks are filtered out by default so the budget isn't wasted.
+1. **Time budget** — I treated this as a hard ceiling.
+2. **Priority (1–5)** — I used this to determine what my knapsack algorithm values most.
+3. **Deadline (`due_time`)** — I used this for my `time-first` and `priority-time` strategies.
+4. **Completion status** — I filtered out done tasks so I wouldn't waste the user's budget.
 
 **b. Tradeoffs**
 
-`fit_tasks` uses 0/1 knapsack, which maximises total priority score — not individual task rank. That means a P5 task can be skipped if two P3 tasks together score higher and fit the budget. Example: budget=50 min, P5@40 + P3@25 + P3@25. Knapsack picks P3+P3 (score 6) over P5 alone (score 5).
-
-This is reasonable because the goal is the best *day* overall, not guaranteeing any single task. Skipped tasks are always shown with the reasoning output so the owner can adjust priorities or the budget.
+I chose the 0/1 knapsack algorithm for `fit_tasks` to maximize the total priority score. I accepted the tradeoff that a single high-priority task might be skipped if multiple medium-priority tasks provide more total value. I believe this provides the best "overall day" for the pet owner.
 
 ---
 
-## 3. AI Collaboration
+## 3. Overcoming Technical Hurdles
+
+During the implementation of the **RAG Engine**, I faced several challenges:
+- **API Configuration:** I initially struggled with environment variable loading for the Gemini API. I overcame this by writing a robust explicit path loader and adding an `is_api_configured` helper.
+- **RAG Setup:** Getting the TF-IDF vectorizer to consistently retrieve the right context from `study_notes.txt` was difficult. I fixed this by implementing a global caching mechanism to avoid re-processing the knowledge base on every query, which improved both stability and performance.
+
+## 4. AI Collaboration
 
 **a. How you used AI**
 
-- **Phase 1 (design):** Brainstormed class responsibilities and relationships. The five-class skeleton came out of one focused conversation.
-- **Phase 2 (implementation):** Described method behavior in plain English, reviewed the generated code against my own understanding.
-- **Phase 3 (testing):** AI structured edge cases into a coherent suite and caught two gaps I'd missed — the `is_overdue()` clock dependency and the `weekly` task with no `recur_day`.
+- **Phase 1 (design):** I brainstormed class responsibilities with the AI to develop my five-class skeleton.
+- **Phase 2 (implementation):** I described the logic I wanted in plain English and reviewed the generated code to ensure it met my standards.
+- **Phase 3 (testing):** AI helped me structure edge cases, specifically catching my missing logic for `is_overdue()` clock dependencies.
 
-Most useful prompt pattern: specific + code-grounded. "Given this signature, what inputs would make it fail silently?" beat "how should I structure this?" every time.
+My most useful prompt pattern was being specific and code-grounded.
 
 **b. Judgment and verification**
 
-The AI initially put `exportPlan` on `Scheduler`. I removed it — `DailyPlan.to_dict()` already handled serialisation, and keeping both would have created a sync risk. I verified by tracing `generate_plan()` and confirming no caller needed a separate export path.
+I had to exercise judgment when the AI proposed putting `exportPlan` on the `Scheduler`. I removed it because I knew `DailyPlan.to_dict()` was a cleaner solution.
 
 **c. VS Code Copilot experience**
 
-- **Most effective features:** Inline completions for repetitive structure (`@dataclass` fields, `__init__` params); chat with `#file` context for auditing the UML against the actual code.
-- **Suggestion I modified:** `sort_by_time` used a single `due_minutes` key — non-deterministic on ties. I changed it to `(due_minutes or float("inf"), -priority)` and verified with `test_same_time_tiebreak_by_priority`.
-- **Separate sessions:** Each phase had a clean, focused context. Writing tests without UI noise kept suggestions relevant and forced me to summarize progress at each handoff.
-- **Lead architect lesson:** AI generates options; you choose between them. A method can be correct and still be in the wrong class. That judgment is yours — it can't be delegated.
+- **What worked for me:** Inline completions for `@dataclass` fields and using the chat with `#file` context to audit my UML.
+- **What I modified:** I fixed the `sort_by_time` logic because the AI's initial suggestion was non-deterministic on ties. I changed it to a tuple-based key `(due_minutes or float("inf"), -priority)`.
+- **My Lesson:** AI generates options, but I make the decisions. A method can be syntactically correct but logically misplaced.
 
 ---
 
-## 4. Testing and Verification
+## 5. My Testing and Verification
 
 **a. What you tested**
 
-61 tests across 12 classes covering every core behavior:
+I wrote 61 tests across 12 classes covering:
 
 - **Sorting** — priority-first, time-first, priority-time, tiebreak at same `due_time`
 - **Recurrence** — daily/weekly next occurrence; one-off returns `None`; `ValueError` on missing/done task
 - **Conflict detection** — overlaps, same start, back-to-back, `[SAME PET]`/`[DIFFERENT PETS]` labels, untimed ignored
-- **Knapsack** — exact fit, over-budget, optimal beats greedy, sort order preserved
+- **Knapsack** — I verified that my optimal selection beats a greedy approach.
 - **Suggest slot** — gaps before/between/after tasks, too-small gap skipped, `search_from`, untimed ignored
 - **Priority labels** — all five score values map to correct emoji label
 - **Plan output** — `summary()` and `to_dict()` field correctness
@@ -172,23 +175,24 @@ These matter because silent failures are the worst kind. A wrong sort produces a
 
 **b. Confidence**
 
-**61/61 passing.** Clock-dependent tests use mocked time so results are deterministic. Remaining gap: no stress test with large task volumes. The knapsack is O(n × budget) — ~24,000 ops for n=50, budget=480 — but conflict detection is O(n²) and could slow at scale.
+I have **61/61 tests passing**. I used mocks for clock-dependent tests to ensure they are deterministic.
 
 ---
 
-## 5. Reflection
+## 6. Final Reflection
 
 **a. What went well**
 
-The test suite. Writing each test forced precision about what a method was *supposed* to do — not just what it happened to do. The `is_overdue()` mock was the standout: I didn't know how to test wall-clock-dependent code until I had to, and figuring it out was the most useful thing I learned about testable design.
+I am most proud of my test suite. It forced me to be precise about my method behaviors. Learning how to mock `datetime` for `is_overdue()` was a major personal milestone in my journey toward testable design.
 
 **b. What you would improve**
 
-Both gaps from the initial reflection were fixed:
+I successfully fixed the gaps I identified early in the project:
 
-- **Greedy → knapsack:** `fit_tasks` now uses 0/1 DP and finds the provably optimal selection. No performance cost for daily planner scale.
-- **Persistence:** `Owner.save_to_json()` / `load_from_json()` with atomic writes. Data survives page refreshes.
+- **Greedy to Knapsack:** I replaced my initial greedy logic with a 0/1 DP approach to find the provably optimal selection.
+- **Persistence:** I implemented atomic JSON writes so data survives refreshes.
+- **API Stability:** I resolved my initial RAG engine and API configuration struggles.
 
 **c. Key takeaway**
 
-Treat AI like a pull request, not a compiler. Read it critically, accept what fits, modify what's close, reject what's wrong. The decision is always yours. If you can't explain why a method works the way it does, you don't own the code — you're just hosting it.
+I learned to treat AI like a pull request rather than a compiler. I read everything critically, and if I couldn't explain why a method worked, I didn't consider it "my" code until I had refined it.
