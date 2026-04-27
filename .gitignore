@@ -7,3 +7,5 @@ __pycache__/
 *.env
 *.tmp
 data.json
+env/
+venv/

@@ -35,10 +35,10 @@ def run_tests():
         expected_keyword = case["expected_keyword"]
 
         print(f"\nTest {index}/{total}: {query}")
-        answer = rag_engine.get_rag_answer(query)
-        print(f"Answer: {answer}")
+        answer_text, confidence = rag_engine.get_rag_answer(query)
+        print(f"Answer: {answer_text} (Confidence: {confidence:.2f})")
 
-        if expected_keyword.lower() in answer.lower():
+        if expected_keyword.lower() in answer_text.lower():
             print("Result: PASS")
             passed += 1
         else:
