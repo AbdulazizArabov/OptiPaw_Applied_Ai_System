@@ -366,6 +366,9 @@ with st.sidebar:
 
     # System status
     st.markdown("### System Status")
+    ai_status = "🟢 Online" if rag_engine.is_api_configured() else "🔴 Offline"
+    st.write(f"AI Assistant: **{ai_status}**")
+    
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Tasks", len([t for p in st.session_state.get('owner', Owner("Default", "", 90)).get_pets() for t in p.get_tasks()]))
@@ -669,10 +672,12 @@ if send_chat and user_question.strip():
     # Get AI response
     with st.spinner("🐾 Thinking..."):
         try:
-            answer = rag_engine.get_rag_answer(user_question.strip())
+            answer, confidence = rag_engine.get_rag_answer(user_question.strip())
+            display_answer = f"{answer}\n\n*Confidence Score: {confidence:.2f}*"
+            
             st.session_state.chat_history.append({
                 "role": "assistant",
-                "content": answer
+                "content": display_answer
             })
             st.rerun()
         except Exception as e:
@@ -695,8 +700,9 @@ with st.expander("💡 Quick Question Starters"):
         if st.button(question, key=f"sample_{question[:20]}", help="Click to ask this question", use_container_width=True):
             st.session_state.chat_history.append({"role": "user", "content": question})
             with st.spinner("🐾 Getting answer..."):
-                answer = rag_engine.get_rag_answer(question)
-                st.session_state.chat_history.append({"role": "assistant", "content": answer})
+                answer, confidence = rag_engine.get_rag_answer(question)
+                display_answer = f"{answer}\n\n*Confidence Score: {confidence:.2f}*"
+                st.session_state.chat_history.append({"role": "assistant", "content": display_answer})
             st.rerun()
 
 st.markdown('</div>', unsafe_allow_html=True)

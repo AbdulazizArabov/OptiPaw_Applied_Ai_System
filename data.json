@@ -2,5 +2,24 @@
   "name": "Max",
   "email": "",
   "available_minutes_per_day": 60,
-  "pets": []
+  "pets": [
+    {
+      "name": "Bronco",
+      "species": "dog",
+      "age": 1,
+      "tasks": [
+        {
+          "name": "Morning Walk",
+          "category": "walk",
+          "duration_minutes": 30,
+          "priority": 4,
+          "is_complete": true,
+          "due_time": null,
+          "recurrence": null,
+          "recur_day": 0,
+          "due_date": null
+        }
+      ]
+    }
+  ]
 }

@@ -31,6 +31,15 @@ else:
     logger.info("GEMINI_API_KEY loaded successfully")
     genai.configure(api_key=api_key)
 
+# Global cache for Knowledge Base to avoid re-processing on every query
+_kb_chunks = None
+_kb_vectorizer = None
+_kb_matrix = None
+
+def is_api_configured():
+    """Helper to check if the AI assistant is ready to use."""
+    return bool(api_key and genai)
+
 # Rate limiting variables
 last_request_time = 0
 min_request_interval = 2  # seconds between requests
@@ -82,6 +91,38 @@ def _retry_with_backoff(func, *args, **kwargs):
                 else:
                     raise e
 
+def _initialize_knowledge_base():
+    """Loads and vectorizes the knowledge base once."""
+    global _kb_chunks, _kb_vectorizer, _kb_matrix
+    
+    if _kb_chunks is not None:
+        return True
+
+    try:
+        study_notes_path = Path(__file__).parent / 'study_notes.txt'
+        if not study_notes_path.exists():
+            logger.error("Knowledge base file missing.")
+            return False
+
+        with open(study_notes_path, 'r', encoding='utf-8') as f:
+            text = f.read()
+        
+        if not text.strip():
+            return False
+
+        # Split and cache chunks
+        _kb_chunks = [chunk.strip() for chunk in text.split('\n\n') if chunk.strip()]
+        
+        # Initialize and fit vectorizer once on the corpus
+        _kb_vectorizer = TfidfVectorizer(stop_words='english', max_features=500)
+        _kb_matrix = _kb_vectorizer.fit_transform(_kb_chunks)
+        
+        logger.info(f"Knowledge base initialized with {len(_kb_chunks)} chunks.")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to initialize KB: {e}")
+        return False
+
 def get_rag_answer(query):
     """
     Performs Retrieval-Augmented Generation (RAG) by searching a local text file
@@ -91,97 +132,51 @@ def get_rag_answer(query):
         query (str): The user's question.
 
     Returns:
-        str: The generated answer or a polite refusal if no relevant context.
+        tuple[str, float]: The generated answer and the confidence score (0-1).
     """
     logger.info(f"Processing query: {query}")
 
     # Validate API key
     if not api_key:
-        logger.error("API key is not available")
-        return "⚠️ AI Assistant Error: API key is not configured. Please check your gem.env file."
+        return "⚠️ AI Assistant Error: API key is not configured.", 0.0
 
     if not genai:
-        logger.error("google.generativeai module is not available")
-        return "⚠️ AI Assistant Error: The AI module is not properly installed."
+        return "⚠️ AI Assistant Error: The AI module is not properly installed.", 0.0
 
     # Validate query
     if not query or not query.strip():
-        logger.warning("Empty query received")
-        return "Please ask a question about pet care."
+        return "Please ask a question about pet care.", 0.0
 
     query = query.strip()
 
-    # Step 1: Load knowledge base
+    # Step 1: Ensure KB is initialized
+    if not _initialize_knowledge_base():
+        return "⚠️ I'm having trouble accessing my pet care knowledge base.", 0.0
+
+    # Step 2: Perform similarity search using cached matrix
     try:
-        study_notes_path = Path(__file__).parent / 'study_notes.txt'
-        logger.info(f"Loading knowledge base from: {study_notes_path}")
-
-        if not study_notes_path.exists():
-            logger.error(f"Knowledge base not found at {study_notes_path}")
-            return "⚠️ Knowledge base not found. Please ensure study_notes.txt exists."
-
-        with open(study_notes_path, 'r', encoding='utf-8') as f:
-            text = f.read()
-
-        if not text:
-            logger.error("Knowledge base is empty")
-            return "⚠️ Knowledge base is empty."
-
-        logger.info(f"Knowledge base loaded: {len(text)} characters")
-
-    except FileNotFoundError:
-        logger.error(f"study_notes.txt not found")
-        return "⚠️ I don't have access to my knowledge base right now."
-    except Exception as e:
-        logger.error(f"Error reading knowledge base: {type(e).__name__}: {e}")
-        return f"⚠️ Error accessing knowledge base: {str(e)}"
-
-    # Step 2: Split text into chunks
-    try:
-        chunks = [chunk.strip() for chunk in text.split('\n\n') if chunk.strip()]
-        if not chunks:
-            logger.error("No chunks found after splitting")
-            return "⚠️ Knowledge base could not be processed."
-        logger.info(f"Created {len(chunks)} knowledge chunks")
-    except Exception as e:
-        logger.error(f"Error splitting text: {type(e).__name__}: {e}")
-        return f"⚠️ Error processing knowledge base: {str(e)}"
-
-    # Step 3: Perform TF-IDF vectorization and similarity search
-    try:
-        documents = chunks + [query]
-        logger.debug(f"Total documents for vectorization: {len(documents)}")
-
-        vectorizer = TfidfVectorizer(stop_words='english', max_features=100)
-        tfidf_matrix = vectorizer.fit_transform(documents)
-        logger.debug(f"TF-IDF matrix shape: {tfidf_matrix.shape}")
-
-        # Calculate cosine similarities
-        query_vector = tfidf_matrix[-1]
-        chunk_vectors = tfidf_matrix[:-1]
-        similarities = cosine_similarity(query_vector, chunk_vectors)[0]
+        query_vector = _kb_vectorizer.transform([query])
+        similarities = cosine_similarity(query_vector, _kb_matrix)[0]
 
         # Find best match
         max_similarity = np.max(similarities)
         best_chunk_idx = np.argmax(similarities)
-        logger.info(f"Best match similarity: {max_similarity:.4f}")
 
         # Set a reasonable threshold
         threshold = 0.05  # Lower threshold to be more helpful
 
         if max_similarity < threshold:
-            logger.info(f"No relevant context found (similarity {max_similarity:.4f} < {threshold})")
             suggestions = "Try asking about: dog care, cat care, feeding, health, vaccinations, exercise, or emergencies."
-            return f"I don't have specific information about that. {suggestions}"
+            return f"I don't have specific information about that. {suggestions}", float(max_similarity)
 
-        context = chunks[best_chunk_idx]
-        logger.info(f"Selected context chunk: {context[:100]}...")
+        context = _kb_chunks[best_chunk_idx]
+        logger.info(f"Selected context (Similarity: {max_similarity:.4f})")
 
     except Exception as e:
         logger.error(f"Error in TF-IDF processing: {type(e).__name__}: {e}", exc_info=True)
-        return f"⚠️ Error processing your question: {str(e)}"
+        return f"⚠️ Error processing your question: {str(e)}", 0.0
 
-    # Step 4: Generate answer using Gemini with rate limiting and retries
+    # Step 3: Generate answer using Gemini with rate limiting and retries
     try:
         logger.info("Calling Gemini API...")
 
@@ -211,25 +206,9 @@ Please provide a helpful answer:"""
         # Extract text from response
         if response and hasattr(response, 'text') and response.text:
             answer = response.text.strip()
-            logger.info(f"Generated answer: {len(answer)} characters")
-            return answer
+            return answer, float(max_similarity)
         else:
-            logger.warning(f"Invalid response from Gemini: {response}")
-            return "⚠️ I couldn't generate a proper answer. Please try rephrasing your question."
+            return "⚠️ I couldn't generate a proper answer. Please try rephrasing.", 0.0
 
     except Exception as e:
-        error_type = type(e).__name__
-        error_msg = str(e)
-        logger.error(f"Gemini API Error - {error_type}: {error_msg}", exc_info=True)
-
-        # Provide specific error messages based on error type
-        if "API_KEY" in error_msg.upper() or "AUTHENTICATION" in error_msg.upper():
-            return "⚠️ API Key Error: The AI assistant is not properly authenticated."
-        elif "RATE" in error_msg.upper() or "QUOTA" in error_msg.upper():
-            return "⚠️ Rate Limit: Too many requests. Please wait a moment and try again."
-        elif "NOT_FOUND" in error_type.upper() or "404" in error_msg:
-            return "⚠️ Model Error: The AI model is currently unavailable. Please try again later."
-        elif "RESOURCE" in error_msg.upper():
-            return "⚠️ Service Unavailable: The AI service is temporarily unavailable."
-        else:
-            return f"⚠️ AI Error: {error_msg}"
+        return f"⚠️ AI Error: {str(e)}", 0.0

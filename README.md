@@ -1,4 +1,4 @@
-﻿# OptiPaw Applied AI System — AI Pet Care Scheduler
+﻿﻿# OptiPaw Applied AI System — AI Pet Care Scheduler
 
 > A Streamlit-based pet care planning app that combines rule-based scheduling with human-readable tests and a small retrieval-augmented answer workflow.
 
@@ -116,6 +116,17 @@ python test_runner.py
 - `pytest tests/test_pawpal.py -v` checks scheduling rules, recurrence, conflict detection, and plan output.
 - `python test_runner.py` validates the RAG/evaluation flow and reports a pass/fail rate.
 - Current project test confidence: **61/61 tests passing**.
+
+```mermaid
+graph LR
+    User([User]) --> Streamlit[Streamlit UI]
+    Streamlit --> Scheduler[Scheduler / Knapsack Engine]
+    Streamlit --> RAG[RAG Engine / Gemini]
+    RAG --> Notes[(study_notes.txt)]
+    Scheduler --> Data[(data.json)]
+    RAG --> User
+    Test[Evaluation Harness] --> RAG
+```
 
 ---
 
