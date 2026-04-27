@@ -24,6 +24,12 @@ TEST_CASES = [
 ]
 
 
+def normalize_text(text):
+    """Standardize characters for more reliable keyword matching."""
+    if not text: return ""
+    return text.lower().replace('–', '-').replace('—', '-').strip()
+
+
 def run_tests():
     passed = 0
     total = len(TEST_CASES)
@@ -38,7 +44,7 @@ def run_tests():
         answer_text, confidence = rag_engine.get_rag_answer(query)
         print(f"Answer: {answer_text} (Confidence: {confidence:.2f})")
 
-        if expected_keyword.lower() in answer_text.lower():
+        if normalize_text(expected_keyword) in normalize_text(answer_text):
             print("Result: PASS")
             passed += 1
         else:

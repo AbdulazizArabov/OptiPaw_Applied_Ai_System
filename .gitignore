@@ -4,6 +4,7 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 *.mp4
+.env
 *.env
 *.tmp
 data.json

@@ -368,6 +368,8 @@ with st.sidebar:
     st.markdown("### System Status")
     ai_status = "🟢 Online" if rag_engine.is_api_configured() else "🔴 Offline"
     st.write(f"AI Assistant: **{ai_status}**")
+    if not rag_engine.is_api_configured():
+        st.warning("⚠️ AI features are disabled. Check your `.env` or `gem.env` file.")
     
     col1, col2 = st.columns(2)
     with col1:

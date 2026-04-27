@@ -95,19 +95,41 @@ python test_runner.py
 
 ### Example 1
 **User:** Add a dog walk task at 08:00 with priority 5.
-**App:** _[paste expected response here]_
+**App:** Scheduled "Long Walk" (P5, 40 min). Note: With a 50-minute budget, if Task B and C (P3 each, 25 min) are added, the system would pivot to B+C to maximize the total priority score to 6.
 
 ### Example 2
 **User:** Add a cat feeding task and generate today’s plan.
-**App:** _[paste expected response here]_
+**App:** "Breakfast" scheduled for Luna. Reasoning: "Scheduled 1 task(s): - Breakfast (priority 4, 10 min)".
 
 ### Example 3
 **User:** Ask the RAG engine about pet vaccination guidelines.
-**App:** _[paste expected response here]_
+**App:** "Vaccinations are crucial for both dogs and cats. Watch for signs of illness like lethargy or changes in appetite..." (Confidence Score: 0.21)
 
 ### Example 4
 **User:** Run the evaluation harness and confirm confidence score.
-**App:** _[paste expected response here]_
+**App:** "Running RAG engine test harness... Test summary: Passed: 5/5. Confidence score: 100%"
+
+---
+
+## Bug Reports & Fixes
+
+### Bug 1: Non-Deterministic Tie-Breaking
+- **Code Location:** `pawpal_system.py` -> `sort_by_time`
+- **Expected:** When two tasks have the same due time, the higher priority should be chosen.
+- **Actual:** The order was inconsistent.
+- **Fix:** Changed sort key to `(t.due_minutes or float("inf"), -t.priority)`.
+
+### Bug 2: LLM Character Mismatch (Normalization)
+- **Code Location:** `test_runner.py` and `rag_engine.py`
+- **Expected:** Keywords like "2-3 times" should match LLM output.
+- **Actual:** Failed because LLM used en-dashes (`–`) while code used hyphens (`-`).
+- **Fix:** Implemented `normalize_text()` to standardize dashes and case before matching.
+
+### Bug 3: RAG Retrieval Precision
+- **Code Location:** `rag_engine.py` -> `get_rag_answer`
+- **Expected:** AI should see both general tips and specific exercise details.
+- **Actual:** Retriever only grabbed 1 chunk, often missing the specific detail needed for the test.
+- **Fix:** Updated `top_k` to 2 to provide broader context to the LLM.
 
 ---
 
