@@ -1,25 +1,6 @@
 {
-  "name": "John Doe",
+  "name": "Max",
   "email": "",
   "available_minutes_per_day": 60,
-  "pets": [
-    {
-      "name": "Mazie",
-      "species": "dog",
-      "age": 1,
-      "tasks": [
-        {
-          "name": "morning walk",
-          "category": "walk",
-          "duration_minutes": 30,
-          "priority": 4,
-          "is_complete": false,
-          "due_time": null,
-          "recurrence": null,
-          "recur_day": 0,
-          "due_date": null
-        }
-      ]
-    }
-  ]
+  "pets": []
 }

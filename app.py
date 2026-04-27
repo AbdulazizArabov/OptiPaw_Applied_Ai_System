@@ -376,10 +376,10 @@ with st.sidebar:
 
     # Quick actions
     st.markdown("### Quick Actions")
-    if st.button("📊 Generate Schedule", use_container_width=True):
+    if st.button("Generate Schedule", use_container_width=True):
         st.info("💡 Scroll down to the Schedule Generation section to create your pet care schedule!")
 
-    if st.button("💬 Ask AI Assistant", use_container_width=True):
+    if st.button("Ask AI Assistant", use_container_width=True):
         st.info("💡 Scroll down to the AI Pet Care Assistant section to ask questions!")
 
     st.divider()
@@ -465,7 +465,7 @@ with col2:
         key="time_budget"
     )
 
-if st.button("💾 Save Profile", type="primary"):
+if st.button("Save Profile", type="primary"):
     st.session_state.owner = Owner(owner_name, "", int(available_minutes))
     st.session_state.owner.save_to_json(DATA_FILE)
     st.session_state.last_plan = None
@@ -490,7 +490,7 @@ with col3:
     age = st.number_input("Age", min_value=0, max_value=30, value=1, key="pet_age")
 with col4:
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("➕ Add Pet", type="primary", use_container_width=True):
+    if st.button("Add Pet", type="primary", use_container_width=True):
         existing_names = [p.name for p in st.session_state.owner.get_pets()]
         if pet_name.strip() in existing_names:
             st.error(f"❌ A pet named '{pet_name}' already exists.")
@@ -558,7 +558,7 @@ else:
             recur_day = st.selectbox("Day (weekly only)",
                                    ["—", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
 
-        submitted = st.form_submit_button("➕ Create Task", type="primary")
+        submitted = st.form_submit_button("Create Task", type="primary")
 
     if submitted:
         # Validate inputs
@@ -657,7 +657,7 @@ with col1:
     )
 with col2:
     send_disabled = not user_question.strip()
-    send_chat = st.button("📤 Send", type="primary", disabled=send_disabled, use_container_width=True)
+    send_chat = st.button("Send", type="primary", disabled=send_disabled, use_container_width=True)
 
 if send_chat and user_question.strip():
     # Add user message
@@ -727,7 +727,7 @@ else:
         pet_filter = st.selectbox("Filter by Pet", filter_options)
 
     with col3:
-        generate = st.button("🚀 Generate Schedule", type="primary", use_container_width=True)
+        generate = st.button("Generate Schedule", type="primary", use_container_width=True)
 
     if generate:
         scheduler = Scheduler(owner=st.session_state.owner, strategy=strategy)
@@ -789,7 +789,7 @@ if plan is not None:
                 task_options = [f"{e.pet_name} → {e.task.name}" for e in plan.scheduled_entries]
                 selected_task = st.selectbox("Select completed task", task_options)
             with col2:
-                if st.button("✅ Mark Done", type="secondary", use_container_width=True):
+                if st.button("Mark Done", type="secondary", use_container_width=True):
                     selected_entry = plan.scheduled_entries[task_options.index(selected_task)]
                     try:
                         pet_obj = next(p for p in st.session_state.owner.get_pets() if p.name == selected_entry.pet_name)
@@ -827,7 +827,7 @@ with col1:
 with col2:
     slot_search_from = st.text_input("Search From Time (optional)", placeholder="HH:MM, e.g., 09:00", key="slot_search_from")
 with col3:
-    find_slot = st.button("🔍 Find Slot", type="secondary", use_container_width=True)
+    find_slot = st.button("Find Slot", type="secondary", use_container_width=True)
 
 if find_slot:
     search_from_min = None
