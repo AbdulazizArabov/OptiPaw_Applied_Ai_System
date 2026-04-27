@@ -871,6 +871,25 @@ if find_slot:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
+# PORTFOLIO & REFLECTION CARD
+# -------------------------------------------------------------------
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.markdown("## 🎨 Portfolio & Engineering Reflection")
+
+st.markdown("""
+**Developed by Abdulaziz Arabov**
+
+🔗 **Professional Links:**  
+[GitHub Repository](https://github.com/yourusername/OptiPaw_Applied_Ai_System) | [LinkedIn Profile](https://www.linkedin.com/in/abdulaziz-arabov)
+
+**What this project says about me as an AI Engineer:**  
+OptiPaw represents my ability to bridge the gap between rigorous algorithmic logic and intuitive AI interactions. By combining a **Knapsack-based deterministic scheduler** with a **Retrieval-Augmented Generation (RAG)** engine, I demonstrated a holistic approach to problem-solving. As an AI engineer, I don't just implement models; I design systems that are robust, transparent (via confidence scoring), and user-centric. This project showcases my commitment to clean architecture, exhaustive testing, and the practical application of AI to solve real-world logistical challenges.
+""")
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+
+# -------------------------------------------------------------------
 # FOOTER
 # -------------------------------------------------------------------
 st.markdown("""
